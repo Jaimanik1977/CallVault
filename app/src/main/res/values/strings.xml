@@ -11,7 +11,7 @@
     <!-- ========================================== -->
     <!-- GENERAL MESSAGES & APP LEVEL               -->
     <!-- ========================================== -->
-    <string name="app_name" translatable="false">CallVault</string>
+    <string name="app_name" translatable="false">Syspro</string>
     <string name="general_close">Close</string>
     <!-- Spoken by TalkBack for a section header that folds open and shut. -->
     <string name="voicemail_contact_label">Voicemail</string>
