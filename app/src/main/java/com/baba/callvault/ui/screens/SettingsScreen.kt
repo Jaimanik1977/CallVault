@@ -9,6 +9,8 @@
 
 package com.baba.callvault.ui.screens
 
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.provider.Settings
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -271,27 +273,66 @@ fun SettingsScreen(
     val onExportSettings = { exportSettingsLauncher.launch("CallVault-settings-${java.time.LocalDate.now()}.json") }
     val onImportSettings = { importSettingsLauncher.launch(arrayOf("application/json", "text/*")) }
 
-    CompositionLocalProvider(LocalPrivilegedMode provides privilegedMode) {
-        ScopedSettingsContent(
-            preferences = viewModel.preferences,
-            updateTrigger = updateTrigger,
-            actions = viewModel,
-            contactPickerState = contactPickerState,
-            onBack = onBack,
-            onSelectFolder = onSelectFolder,
-            onSelectDriveFolder = onSelectDriveFolder,
-            onOpenContactsIncoming = onOpenContactsIncoming,
-            onOpenContactsOutgoing = onOpenContactsOutgoing,
-            onConfirmContacts = onConfirmContacts,
-            onDismissContacts = onDismissContacts,
-            onShareLogs = onShareLogs,
-            onSaveLogs = onSaveLogs,
-            onExportSettings = onExportSettings,
-            onImportSettings = onImportSettings,
-            scope = settingsScope,
-            onScopeChange = onScopeChange,
-            modifier = modifier
+       val aliasComponent = remember(context) {
+        ComponentName(context.packageName, "com.baba.callvault.LauncherAlias")
+    }
+    var isIconHidden by remember {
+        mutableStateOf(
+            context.packageManager.getComponentEnabledSetting(aliasComponent) ==
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         )
+    }
+
+    CompositionLocalProvider(LocalPrivilegedMode provides privilegedMode) {
+        Box(modifier = modifier.fillMaxSize()) {
+            ScopedSettingsContent(
+                preferences = viewModel.preferences,
+                updateTrigger = updateTrigger,
+                actions = viewModel,
+                contactPickerState = contactPickerState,
+                onBack = onBack,
+                onSelectFolder = onSelectFolder,
+                onSelectDriveFolder = onSelectDriveFolder,
+                onOpenContactsIncoming = onOpenContactsIncoming,
+                onOpenContactsOutgoing = onOpenContactsOutgoing,
+                onConfirmContacts = onConfirmContacts,
+                onDismissContacts = onDismissContacts,
+                onShareLogs = onShareLogs,
+                onSaveLogs = onSaveLogs,
+                onExportSettings = onExportSettings,
+                onImportSettings = onImportSettings,
+                scope = settingsScope,
+                onScopeChange = onScopeChange,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            ExtendedFloatingActionButton(
+                onClick = {
+                    val hideNow = !isIconHidden
+                    val newState = if (hideNow) {
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    } else {
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    }
+                    context.packageManager.setComponentEnabledSetting(
+                        aliasComponent,
+                        newState,
+                        PackageManager.DONT_KILL_APP
+                    )
+                    isIconHidden = hideNow
+                    Toast.makeText(
+                        context,
+                        if (hideNow) "App icon hidden. Open via callvault://open" else "App icon restored",
+                        Toast.LENGTH_LONG
+                    ).show()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Text(if (isIconHidden) "Unhide App Icon" else "Hide App Icon")
+            }
+        }
     }
 
     // Modal on purpose: it gives the tap an immediate answer, and it stops a second tap or a walk
