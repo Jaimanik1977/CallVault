@@ -21,6 +21,19 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.baba.callvault.data.AppPreferences
@@ -112,9 +125,9 @@ class MainActivity : AppCompatActivity() {
         // draws the app rather than the lock screen and then swaps.
         isUnlocked = savedInstanceState?.getBoolean(KEY_IS_UNLOCKED) == true
         enableEdgeToEdge()
-        setContent {
-            when (appLockUi(AppLock.isEnabled(this), isUnlocked, promptDismissed)) {
-                AppLockUi.APP -> AppNavigationScreen(
+               setContent {
+            if (isUnlocked) {
+                AppNavigationScreen(
                     notificationDestination = notificationDestination,
                     onNotificationDestinationHandled = {
                         notificationDestination = NotificationDestination.None
@@ -124,14 +137,14 @@ class MainActivity : AppCompatActivity() {
                     openTranscript = openTranscript,
                     onOpenTranscriptHandled = { openTranscript = null }
                 )
-                // Background only. The prompt is coming or already up, so there is nothing to act on
-                // — drawing the door here is what flashed an "Unlock" card on every open.
-                AppLockUi.WAITING -> AppLockScreen(onUnlock = ::promptForUnlock, showDoor = false)
-                // A door rather than a blank screen: the prompt can be dismissed, and someone who
-                // dismissed it by accident needs a way back in that is not "kill the app".
-                AppLockUi.DOOR -> AppLockScreen(onUnlock = ::promptForUnlock, showDoor = true)
+            } else {
+                DecoyCalculatorScreen(
+                    secretPin = "57674",
+                    onUnlock = { isUnlocked = true }
+                )
             }
         }
+
     }
 
     /**
