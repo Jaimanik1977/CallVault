@@ -347,3 +347,131 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_OUTGOING_CALLS = 4401
     }
 }
+
+@Composable
+fun DecoyCalculatorScreen(
+    secretPin: String,
+    onUnlock: () -> Unit
+) {
+    var display by remember { mutableStateOf("0") }
+    var firstOperand by remember { mutableStateOf<Double?>(null) }
+    var pendingOp by remember { mutableStateOf<String?>(null) }
+    var resetNext by remember { mutableStateOf(false) }
+
+    fun calculate(a: Double, b: Double, op: String): String {
+        val res = when (op) {
+            "+" -> a + b
+            "-" -> a - b
+            "×" -> a * b
+            "÷" -> if (b != 0.0) a / b else Double.NaN
+            else -> b
+        }
+        return if (res.isNaN()) "Error"
+        else if (res % 1.0 == 0.0) res.toLong().toString()
+        else res.toString()
+    }
+
+    fun onButtonClick(label: String) {
+        when (label) {
+            "C" -> {
+                display = "0"
+                firstOperand = null
+                pendingOp = null
+                resetNext = false
+            }
+            "⌫" -> {
+                display = if (display.length > 1) display.dropLast(1) else "0"
+            }
+            "+", "-", "×", "÷" -> {
+                firstOperand = display.toDoubleOrNull()
+                pendingOp = label
+                resetNext = true
+            }
+            "=" -> {
+                if (display == secretPin) {
+                    onUnlock()
+                    return
+                }
+                val a = firstOperand
+                val b = display.toDoubleOrNull()
+                val op = pendingOp
+                if (a != null && b != null && op != null) {
+                    display = calculate(a, b, op)
+                    firstOperand = null
+                    pendingOp = null
+                    resetNext = true
+                }
+            }
+            "." -> {
+                if (resetNext) {
+                    display = "0."
+                    resetNext = false
+                } else if (!display.contains(".")) {
+                    display += "."
+                }
+            }
+            else -> {
+                val next = if (display == "0" || resetNext) label else display + label
+                resetNext = false
+                if (next == secretPin) {
+                    onUnlock()
+                } else {
+                    display = next
+                }
+            }
+        }
+    }
+
+    val rows = listOf(
+        listOf("C", "⌫", "÷"),
+        listOf("7", "8", "9", "×"),
+        listOf("4", "5", "6", "-"),
+        listOf("1", "2", "3", "+"),
+        listOf("0", ".", "=")
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF121212))
+            .systemBarsPadding()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Text(
+            text = display,
+            color = Color.White,
+            fontSize = 52.sp,
+            fontWeight = FontWeight.Light,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 24.dp)
+        )
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                row.forEach { label ->
+                    val isOp = label in listOf("+", "-", "×", "÷", "=")
+                    Button(
+                        onClick = { onButtonClick(label) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isOp) Color(0xFF1976D2) else Color(0xFF262626)
+                        ),
+                        modifier = Modifier
+                            .weight(if (label == "0" || label == "C") 1.5f else 1f)
+                            .height(72.dp)
+                    ) {
+                        Text(text = label, fontSize = 24.sp, color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
