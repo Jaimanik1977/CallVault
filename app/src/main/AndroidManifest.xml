@@ -88,20 +88,43 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CallVault"
         android:usesCleartextTraffic="true">
-        <!-- MainActivity must be run when Android want to show the application UI (with the app launcher) -->
+        
+      <!-- MainActivity stays active even when the launcher icon is disabled -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.CallVault">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.APPLICATION_PREFERENCES" /> <!-- Show "Additional settings in the app" button in Settings App Info -->
-                <category android:name="android.intent.category.NOTIFICATION_PREFERENCES" /> <!-- Show "Additional settings in the app" button in Settings App Info -> notifications -->
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                <category android:name="android.intent.category.NOTIFICATION_PREFERENCES" />
+            </intent-filter>
+            <!-- Lets you open the app anytime by typing callvault://open in Chrome -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="callvault" android:host="open" />
             </intent-filter>
         </activity>
 
-        <!--
+        <!-- Toggleable launcher icon -->
+        <activity-alias
+            android:name=".LauncherAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+          
+       <!--
             Share target: one audio file sent to CallVault from another app.
 
             A separate Activity, not MainActivity, and the reasons are in ShareImportActivity's own
