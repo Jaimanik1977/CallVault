@@ -145,18 +145,10 @@ object RecorderServerLauncher {
     // 24s total / 3 attempts = 8s per attempt. The old 12s (=4s/attempt) was shorter than the daemon's
     // cold-start, so attempt 1 ALWAYS timed out and we burned ~8s before even retrying — the biggest
     // avoidable chunk of the post-reap "starting up" window a call races. 8s comfortably covers a cold boot.
-       fun ensureServerRunning(context: Context, timeoutMs: Long = 24_000): Boolean {
-        if (RecorderConnection.isConnected &&
-            runCatching { RecorderConnection.service?.asBinder()?.isBinderAlive }.getOrDefault(false) == true
-        ) {
-            AppLogger.d(TAG, "Recorder daemon already connected and alive; skipping ADB/WD entirely")
-            return true
-        }
-        return synchronized(AdbShell.heavyOperationLock) {
+          fun ensureServerRunning(context: Context, timeoutMs: Long = 24_000): Boolean =
+        synchronized(AdbShell.heavyOperationLock) {
             AdbShell.asAdbUser(context, "the daemon launch") { ensureServerRunningLocked(context, timeoutMs) }
         }
-    }
-
 
      private fun ensureServerRunningLocked(context: Context, timeoutMs: Long): Boolean {
         if (RecorderConnection.isConnected) {
