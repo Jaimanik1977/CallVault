@@ -145,14 +145,18 @@ object RecorderServerLauncher {
     // 24s total / 3 attempts = 8s per attempt. The old 12s (=4s/attempt) was shorter than the daemon's
     // cold-start, so attempt 1 ALWAYS timed out and we burned ~8s before even retrying — the biggest
     // avoidable chunk of the post-reap "starting up" window a call races. 8s comfortably covers a cold boot.
-    fun ensureServerRunning(context: Context, timeoutMs: Long = 24_000): Boolean =
-        // Serialize with the update installer (and other daemon launches) on the shared ADB lock, so
-        // a launch's reconnect/WD-toggle never tears down an in-flight update install stream.
-        synchronized(AdbShell.heavyOperationLock) {
-            // Holds the Wireless-debugging lease across the whole launch. Without it, a settings screen
-            // finishing its USB probe could switch WD off midway through — and switching it off drops
-            // the embedded ADB connection this launch is running on.
+       fun ensureServerRunning(context: Context, timeoutMs: Long = 24_000): Boolean {
+        if (RecorderConnection.isConnected &&
+            runCatching { RecorderConnection.service?.asBinder()?.isBinderAlive }.getOrDefault(false) == true
+        ) {
+            AppLogger.d(TAG, "Recorder daemon already connected and alive; skipping ADB/WD entirely")
+            return true
+        }
+        return synchronized(AdbShell.heavyOperationLock) {
             AdbShell.asAdbUser(context, "the daemon launch") { ensureServerRunningLocked(context, timeoutMs) }
+        }
+    }
+
         }
 
     private fun ensureServerRunningLocked(context: Context, timeoutMs: Long): Boolean {
