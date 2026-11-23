@@ -157,9 +157,8 @@ object RecorderServerLauncher {
         }
     }
 
-        }
 
-    private fun ensureServerRunningLocked(context: Context, timeoutMs: Long): Boolean {
+     private fun ensureServerRunningLocked(context: Context, timeoutMs: Long): Boolean {
         if (RecorderConnection.isConnected) {
             AppLogger.d(TAG, "Recorder daemon already connected; reusing existing binder")
             // On a phone seen pausing the app, skip the advisory USB-default refresh: this is the start of a
