@@ -10,33 +10,19 @@ package com.baba.callvault.integrations.adb
 
 import android.content.Context
 import android.provider.Settings
-import com.baba.callvault.server.RecorderConnection
 
 object DeveloperOptions {
 
-    private fun isDaemonAlive(): Boolean {
-        val binder = RecorderConnection.service?.asBinder() ?: return false
-        return runCatching { binder.isBinderAlive }.getOrDefault(false)
-    }
-
     fun isEnabled(context: Context): Boolean = state(context) == DeveloperOptionsState.ON
 
-    fun state(context: Context): DeveloperOptionsState {
-        if (isDaemonAlive()) {
-            return DeveloperOptionsState.ON
-        }
-        return DeveloperOptionsPolicy.of(
-            settingSaysOn = runCatching {
-                Settings.Global.getInt(context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
-            }.getOrDefault(false),
-            usbDebugging = AdbShell.usbDebuggingState(context),
-            wirelessDebuggingOn = runCatching { AdbShell.isWirelessDebuggingEnabled(context) }.getOrDefault(false),
-            adbd = runCatching { AdbShell.adbdState() }.getOrDefault(AdbdState.UNKNOWN),
-        )
-    }
+    fun state(context: Context): DeveloperOptionsState = DeveloperOptionsPolicy.of(
+        settingSaysOn = runCatching {
+            Settings.Global.getInt(context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
+        }.getOrDefault(false),
+        usbDebugging = AdbShell.usbDebuggingState(context),
+        wirelessDebuggingOn = runCatching { AdbShell.isWirelessDebuggingEnabled(context) }.getOrDefault(false),
+        adbd = runCatching { AdbShell.adbdState() }.getOrDefault(AdbdState.UNKNOWN),
+    )
 
-    fun isExplicitlyDisabled(context: Context): Boolean {
-        if (isDaemonAlive()) return false
-        return state(context) == DeveloperOptionsState.OFF
-    }
+    fun isExplicitlyDisabled(context: Context): Boolean = state(context) == DeveloperOptionsState.OFF
 }
